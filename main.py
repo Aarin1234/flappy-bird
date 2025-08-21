@@ -55,13 +55,58 @@ class Bird(pygame.sprite.Sprite):
 
         
     def update(self):
-        pass
+        if flying:
+            self.vel = min(self.vel + 0.5, 8)
+            self.rect.y += int(self.vel)
+            
+        if not Game_over:
+            if pygame.mouse.get_pressed()[0] and not self.clicked:
+                self.clicked = True
+                self.vel =- 10
+            if not pygame.mouse.get_pressed()[0]:
+                self.clicked = False
+            self.counter += 1
+            if self.counter> 5:
+                self.counter = 0
+                self.index = (self.index +1) % len(self.images)  
+            self.image = pygame.transform.rotate(self.images[self.index],self.vel*-2)
+        else:
+            self.image = pygame.transform.rotate(self.images[self.index],-90)
+
+
+
+class pipe(pygame.sprite.Sprite):
+    def __init__(self, x, y, pos):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load("pipe.png")
+        if pos == 1:
+            self.image = pygame.transform.flip(self.image, False, True)
+            self.rect = self.image.get_rect(bottomleft=(x, y - pipe_gap //2))
+        else:
+            self.rect = self.image.get_rect(topleft=(x, y + pipe_gap //2))
+    def update(self):
+        self.rect.x-= scroll_speed
+        if self.rect.right< 0 :
+            self.kill()
+        
+
+
+
+
 
 class Button():
     def __init__(self, x, y, img):
-        pass
+        self.image = img
+        self.rect = self.image.get_rect(topleft=(x,y))
+        
     def draw(self):
-        pass
+        pos = pygame.mouse.get_pos()#to get the CURRENT pos of the mouse
+        if self.rect.collidepoint(pos) and pygame.mouse.get_pressed()[0]:
+            return True
+        screen.blit(self.image,self.rect)
+        return False# this means if the button hasn't been clicked
+            
+        
 
 #grouping the sprites
 bird_group = pygame.sprite.Group()
@@ -82,8 +127,11 @@ while running:
     if not Game_over and flying:
         time_now = pygame.time.get_ticks()
 
-    
-
+        if time_now - last_pipe>pipe_freq:
+            pipe_height = random.randint(-100,100)
+            pipe(W,H // 2 + pipe_height,-1).add(pipe_group)
+            pipe(W,H // 2 + pipe_height, 1).add(pipe_group)
+            last_pipe = time_now
     #updating the bird
     bird_group.update()
     bird_group.draw(screen)
